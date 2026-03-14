@@ -4,36 +4,30 @@
 <title>IP Rotation Detection</title>
 
 <style>
-
 body{
 margin:0;
 font-family:Inter,Segoe UI,Arial;
 background:radial-gradient(circle at top,#0f172a,#020617);
 color:#e5e7eb;
 }
-
 .wrapper{
 width:1100px;
 margin:50px auto;
 display:flex;
 gap:25px;
 }
-
 .panel{
 background:linear-gradient(145deg,#0b1220,#060b16);
 border-radius:18px;
 padding:25px;
 box-shadow:0 20px 60px rgba(0,0,0,0.6);
 }
-
 .left{flex:2;}
 .right{flex:1;}
-
 .heading{
 font-size:22px;
 margin-bottom:15px;
 }
-
 .ipcard{
 display:flex;
 align-items:center;
@@ -43,19 +37,16 @@ padding:18px;
 border-radius:14px;
 margin-bottom:15px;
 }
-
 .ipbadge{
 background:rgba(255,255,255,0.15);
 padding:12px 14px;
 border-radius:12px;
 font-weight:bold;
 }
-
 .iptext{
 font-size:22px;
 font-weight:600;
 }
-
 .statusbar{
 background:#064e3b;
 padding:10px;
@@ -63,7 +54,6 @@ border-radius:10px;
 text-align:center;
 margin-bottom:15px;
 }
-
 .controls button{
 padding:8px 14px;
 margin-right:8px;
@@ -74,7 +64,6 @@ background:linear-gradient(135deg,#06b6d4,#9333ea);
 color:white;
 font-weight:600;
 }
-
 .log{
 margin-top:15px;
 background:#020617;
@@ -85,14 +74,12 @@ overflow:auto;
 font-size:13px;
 opacity:0.8;
 }
-
 .smallbox{
 background:#020617;
 border-radius:12px;
 padding:14px;
 margin-top:15px;
 }
-
 .intelrow{
 display:flex;
 justify-content:space-between;
@@ -100,14 +87,12 @@ font-size:13px;
 margin:4px 0;
 opacity:.85;
 }
-
 .intervalBox{
 display:flex;
 justify-content:center;
 align-items:center;
 gap:15px;
 }
-
 .intervalBox button{
 width:35px;
 height:35px;
@@ -118,7 +103,6 @@ color:white;
 font-size:18px;
 cursor:pointer;
 }
-
 textarea{
 width:100%;
 height:120px;
@@ -128,16 +112,13 @@ background:#020617;
 color:white;
 padding:10px;
 }
-
 .warn{
 color:#ef4444;
 font-size:13px;
 text-align:center;
 margin-bottom:10px;
 }
-
 </style>
-
 </head>
 
 <body>
@@ -187,13 +168,11 @@ After IP change system triggers alarm and opens sites.
 
 <div class="smallbox">
 <div style="margin-bottom:8px;">Settings</div>
-
 <div class="intervalBox">
 <button onclick="decInterval()">-</button>
 <div id="intervalText">5 sec</div>
 <button onclick="incInterval()">+</button>
 </div>
-
 </div>
 
 <div class="smallbox">
@@ -201,21 +180,12 @@ After IP change system triggers alarm and opens sites.
 </div>
 
 <div class="smallbox">
-
-<div class="warn">
-⚠ Pop-ups Blocked? Allow popups for this site.
-</div>
-
-<div style="font-size:13px;margin-bottom:6px;">
-Open Site on IP Change
-</div>
-
+<div class="warn">⚠ Allow pop-ups for this site.</div>
+<div style="font-size:13px;margin-bottom:6px;">Open Site on IP Change</div>
 <textarea id="targetLink" placeholder="One URL per line"></textarea>
-
 </div>
 
 </div>
-
 </div>
 
 <audio id="alarmSound">
@@ -227,23 +197,28 @@ Open Site on IP Change
 let lastIP=null;
 let interval=5;
 let muted=false;
+let monitorTimer=null;
 
 async function getIP(){
 let r=await fetch("https://api.ipify.org");
 return await r.text();
 }
 
-async function loadIntel(ip){
+async function loadIntel(){
 try{
-let r = await fetch("https://ipapi.co/"+ip+"/json/");
+let r = await fetch("https://ipcheck.free.nf/intel.php");
 let d = await r.json();
 
+let vpnColor = d.vpn ? "#ef4444" : "#22c55e";
+let vpnText = d.vpn ? "YES" : "NO";
+
 let html = `
-<div class="intelrow"><span>Country</span><span>${d.country_name || "Unknown"}</span></div>
-<div class="intelrow"><span>City</span><span>${d.city || "Unknown"}</span></div>
-<div class="intelrow"><span>ISP</span><span>${d.org || "Unknown"}</span></div>
-<div class="intelrow"><span>ASN</span><span>${d.asn || "Unknown"}</span></div>
-<div class="intelrow"><span>Timezone</span><span>${d.timezone || "Unknown"}</span></div>
+<div class="intelrow"><span>Country</span><span>${d.country}</span></div>
+<div class="intelrow"><span>City</span><span>${d.city}</span></div>
+<div class="intelrow"><span>ZIP</span><span>${d.zip}</span></div>
+<div class="intelrow"><span>Fraud Score</span><span>${d.fraud}</span></div>
+<div class="intelrow"><span>VPN</span><span style="color:${vpnColor}">${vpnText}</span></div>
+<div class="intelrow"><span>Privacy Index</span><span>${d.privacy}/100</span></div>
 <div class="intelrow"><span>Resolution</span><span>${screen.width}x${screen.height}</span></div>
 `;
 
@@ -257,20 +232,18 @@ document.getElementById("intelBox").innerHTML="Intel load failed";
 async function monitor(){
 
 let ip=await getIP();
-
 document.getElementById("ipDisplay").innerHTML=ip;
 
 if(!lastIP){
 log("Initial IP detected: "+ip);
-await loadIntel(ip);
+loadIntel();
 }
 
 if(lastIP && ip!==lastIP){
 
 document.getElementById("statusBar").innerHTML="IP CHANGED 🚨";
 log("IP changed to "+ip);
-
-await loadIntel(ip);
+loadIntel();
 
 if(!muted){
 document.getElementById("alarmSound").play();
@@ -289,8 +262,7 @@ document.getElementById("statusBar").innerHTML="IP is stable: "+ip;
 }
 
 lastIP=ip;
-
-setTimeout(monitor,interval*1000);
+monitorTimer=setTimeout(monitor,interval*1000);
 }
 
 function log(t){
@@ -300,6 +272,7 @@ box.scrollTop=box.scrollHeight;
 }
 
 function forceCheck(){
+clearTimeout(monitorTimer);
 monitor();
 }
 

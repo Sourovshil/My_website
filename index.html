@@ -1,63 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>IP Change Alarm Monitor</title>
+<title>IP Rotation Detection</title>
 
 <style>
 
 body{
-background: linear-gradient(135deg,#050505,#0b1a0b);
-font-family: Consolas, monospace;
-color:#00ff9c;
-text-align:center;
-margin-top:70px;
+margin:0;
+font-family:Segoe UI, sans-serif;
+background: radial-gradient(circle at top,#0f172a,#020617);
+color:white;
 }
 
-h2{
-font-size:40px;
-letter-spacing:2px;
-text-shadow:0 0 15px #00ff9c;
+.container{
+width:900px;
+margin:60px auto;
+display:flex;
+gap:30px;
 }
 
-p{
-font-size:18px;
+.card{
+background:linear-gradient(145deg,#0b1220,#0a0f1a);
+padding:30px;
+border-radius:18px;
+box-shadow:0 0 40px rgba(0,0,0,0.6);
+flex:1;
+}
+
+.title{
+font-size:26px;
 margin-bottom:20px;
 }
 
-input{
-padding:14px;
-width:420px;
-font-size:16px;
-border:none;
-border-radius:8px;
-outline:none;
-background:#0f0f0f;
-color:#00ff9c;
-box-shadow:0 0 10px #00ff9c55;
-}
-
-button{
-margin-top:20px;
-padding:12px 30px;
-font-size:18px;
-border:none;
-border-radius:8px;
-cursor:pointer;
-background:#00ff9c;
-color:black;
-font-weight:bold;
-transition:0.3s;
-}
-
-button:hover{
-transform:scale(1.05);
-box-shadow:0 0 20px #00ff9c;
-}
-
-#status{
-margin-top:35px;
+.ipbox{
+background:linear-gradient(135deg,#1d4ed8,#9333ea);
+padding:20px;
+border-radius:14px;
 font-size:22px;
-text-shadow:0 0 10px #00ff9c;
+font-weight:bold;
+margin-bottom:20px;
+}
+
+.status{
+background:#064e3b;
+padding:12px;
+border-radius:10px;
+margin-bottom:20px;
+text-align:center;
+}
+
+.controls button{
+padding:10px 18px;
+margin-right:10px;
+border:none;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+background:linear-gradient(135deg,#06b6d4,#9333ea);
+color:white;
+}
+
+textarea{
+width:100%;
+height:120px;
+border-radius:10px;
+border:none;
+padding:10px;
+background:#020617;
+color:white;
+}
+
+.interval{
+margin-top:15px;
+opacity:0.7;
 }
 
 </style>
@@ -66,16 +81,40 @@ text-shadow:0 0 10px #00ff9c;
 
 <body>
 
-<h2>🌐 IP Change Alarm Monitor</h2>
+<div class="container">
 
-<p>Enter website link to open when IP changes</p>
+<div class="card">
 
-<input type="text" id="targetLink" placeholder="https://example.com">
+<div class="title">IP Rotation Detection</div>
 
-<br>
-<button onclick="startMonitor()">Start Monitoring</button>
+<div class="ipbox" id="ipDisplay">
+Detecting IP...
+</div>
 
-<div id="status">Status: Idle</div>
+<div class="status" id="statusBox">
+System Idle
+</div>
+
+<div class="controls">
+<button onclick="startMonitor()">Start</button>
+<button onclick="forceCheck()">Force Check</button>
+</div>
+
+<div class="interval">
+Interval: 5 sec
+</div>
+
+</div>
+
+<div class="card">
+
+<div style="margin-bottom:10px;">Open site on IP change</div>
+
+<textarea id="targetLink" placeholder="One URL per line"></textarea>
+
+</div>
+
+</div>
 
 <audio id="alarmSound">
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
@@ -83,56 +122,54 @@ text-shadow:0 0 10px #00ff9c;
 
 <script>
 
-let lastIP = null;
-let monitorRunning = false;
+let lastIP=null;
+let monitorRunning=false;
 
 async function getIP(){
-    let res = await fetch("https://api.ipify.org");
-    return await res.text();
+let res=await fetch("https://api.ipify.org");
+return await res.text();
 }
 
 async function checkIP(){
 
-    if(!monitorRunning) return;
+if(!monitorRunning) return;
 
-    try{
-        let currentIP = await getIP();
+let ip=await getIP();
 
-        document.getElementById("status").innerHTML =
-        "Current IP: " + currentIP;
+document.getElementById("ipDisplay").innerHTML=ip;
 
-        if(lastIP && currentIP !== lastIP){
+if(lastIP && ip!==lastIP){
 
-            document.getElementById("alarmSound").play();
+document.getElementById("statusBox").innerHTML="IP CHANGED 🚨";
+document.getElementById("alarmSound").play();
 
-            let url = document.getElementById("targetLink").value;
+let urls=document.getElementById("targetLink").value.split("\n");
 
-            if(url){
-                window.open(url, "_blank");
-            }
+urls.forEach(u=>{
+if(u.trim()!=""){
+window.open(u.trim(),"_blank");
+}
+});
 
-        }
+}else{
+document.getElementById("statusBox").innerHTML="IP Stable";
+}
 
-        lastIP = currentIP;
+lastIP=ip;
 
-    }catch(e){
-        document.getElementById("status").innerHTML =
-        "Error checking IP...";
-    }
-
-    setTimeout(checkIP, 5000);
+setTimeout(checkIP,5000);
 }
 
 async function startMonitor(){
+monitorRunning=true;
+lastIP=await getIP();
+document.getElementById("ipDisplay").innerHTML=lastIP;
+document.getElementById("statusBox").innerHTML="Monitoring Started";
+checkIP();
+}
 
-    monitorRunning = true;
-
-    lastIP = await getIP();
-
-    document.getElementById("status").innerHTML =
-    "Monitoring started... Current IP: " + lastIP;
-
-    checkIP();
+function forceCheck(){
+checkIP();
 }
 
 </script>

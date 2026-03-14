@@ -3,6 +3,8 @@
 <head>
 <title>IP Rotation Detection</title>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
 
 body{
@@ -13,10 +15,12 @@ color:#e5e7eb;
 }
 
 .wrapper{
-width:1100px;
-margin:50px auto;
+max-width:1200px;
+margin:40px auto;
 display:flex;
 gap:25px;
+padding:0 20px;
+flex-wrap:wrap;
 }
 
 .panel{
@@ -74,7 +78,7 @@ transition:.3s;
 
 .controls button{
 padding:8px 14px;
-margin-right:8px;
+margin:4px;
 border:none;
 border-radius:10px;
 cursor:pointer;
@@ -157,6 +161,22 @@ transition:.4s;
 z-index:9999;
 }
 
+@media (max-width:900px){
+
+.wrapper{
+flex-direction:column;
+}
+
+.left,.right{
+flex:100%;
+}
+
+.iptext{
+font-size:18px;
+}
+
+}
+
 </style>
 
 </head>
@@ -184,9 +204,9 @@ System Idle
 <div class="controls">
 <button onclick="copyIP()">Copy IP</button>
 <button onclick="toggleMute()" id="muteBtn">Mute</button>
-<button onclick="forceCheck()">Force check</button>
+<button onclick="forceCheck()">Force</button>
 <button onclick="toggleMonitor()" id="runBtn">Stop</button>
-<button onclick="clearLogs()">Clear logs</button>
+<button onclick="clearLogs()">Clear</button>
 </div>
 
 <div class="log" id="logBox">
@@ -220,13 +240,9 @@ After IP change system triggers alarm and opens sites.
 </div>
 
 <div class="smallbox">
-<div style="text-align:center">Alarm sound</div>
-</div>
-
-<div class="smallbox">
 
 <div class="warn">
-⚠ Pop-ups Blocked? Allow popups for this site.
+⚠ Allow popups for automatic opening.
 </div>
 
 <div style="font-size:13px;margin-bottom:6px;">
@@ -263,15 +279,15 @@ return await r.text();
 
 async function loadIntel(ip){
 try{
-let r = await fetch("https://ipapi.co/"+ip+"/json/");
+let r = await fetch("https://ipwho.is/"+ip);
 let d = await r.json();
 
 let html = `
-<div class="intelrow"><span>Country</span><span>${d.country_name}</span></div>
+<div class="intelrow"><span>Country</span><span>${d.country}</span></div>
 <div class="intelrow"><span>City</span><span>${d.city}</span></div>
-<div class="intelrow"><span>ISP</span><span>${d.org}</span></div>
-<div class="intelrow"><span>ASN</span><span>${d.asn}</span></div>
-<div class="intelrow"><span>Timezone</span><span>${d.timezone}</span></div>
+<div class="intelrow"><span>ISP</span><span>${d.connection?.isp || "N/A"}</span></div>
+<div class="intelrow"><span>ASN</span><span>${d.connection?.asn || "N/A"}</span></div>
+<div class="intelrow"><span>Timezone</span><span>${d.timezone?.id || "N/A"}</span></div>
 <div class="intelrow"><span>Resolution</span><span>${screen.width}x${screen.height}</span></div>
 `;
 
@@ -341,9 +357,7 @@ box.innerHTML+="<br>"+new Date().toLocaleTimeString()+" "+t;
 box.scrollTop=box.scrollHeight;
 }
 
-function forceCheck(){
-monitor();
-}
+function forceCheck(){ monitor(); }
 
 function incInterval(){
 interval++;

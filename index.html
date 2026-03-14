@@ -3,8 +3,6 @@
 <head>
 <title>IP Rotation Detection</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 
 body{
@@ -15,12 +13,10 @@ color:#e5e7eb;
 }
 
 .wrapper{
-max-width:1200px;
-margin:40px auto;
+width:1100px;
+margin:50px auto;
 display:flex;
 gap:25px;
-padding:0 20px;
-flex-wrap:wrap;
 }
 
 .panel{
@@ -46,13 +42,6 @@ background:linear-gradient(135deg,#2563eb,#9333ea);
 padding:18px;
 border-radius:14px;
 margin-bottom:15px;
-animation:pulse 3s infinite;
-}
-
-@keyframes pulse{
-0%{box-shadow:0 0 0px rgba(147,51,234,.6);}
-50%{box-shadow:0 0 30px rgba(147,51,234,1);}
-100%{box-shadow:0 0 0px rgba(147,51,234,.6);}
 }
 
 .ipbadge{
@@ -73,12 +62,11 @@ padding:10px;
 border-radius:10px;
 text-align:center;
 margin-bottom:15px;
-transition:.3s;
 }
 
 .controls button{
 padding:8px 14px;
-margin:4px;
+margin-right:8px;
 border:none;
 border-radius:10px;
 cursor:pointer;
@@ -95,7 +83,7 @@ padding:12px;
 height:120px;
 overflow:auto;
 font-size:13px;
-opacity:0.85;
+opacity:0.8;
 }
 
 .smallbox{
@@ -148,35 +136,6 @@ text-align:center;
 margin-bottom:10px;
 }
 
-#flashAlert{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:red;
-opacity:0;
-pointer-events:none;
-transition:.4s;
-z-index:9999;
-}
-
-@media (max-width:900px){
-
-.wrapper{
-flex-direction:column;
-}
-
-.left,.right{
-flex:100%;
-}
-
-.iptext{
-font-size:18px;
-}
-
-}
-
 </style>
 
 </head>
@@ -204,9 +163,7 @@ System Idle
 <div class="controls">
 <button onclick="copyIP()">Copy IP</button>
 <button onclick="toggleMute()" id="muteBtn">Mute</button>
-<button onclick="forceCheck()">Force</button>
-<button onclick="toggleMonitor()" id="runBtn">Stop</button>
-<button onclick="clearLogs()">Clear</button>
+<button onclick="forceCheck()">Force check</button>
 </div>
 
 <div class="log" id="logBox">
@@ -240,9 +197,13 @@ After IP change system triggers alarm and opens sites.
 </div>
 
 <div class="smallbox">
+<div style="text-align:center">Alarm sound</div>
+</div>
+
+<div class="smallbox">
 
 <div class="warn">
-⚠ Allow popups for automatic opening.
+⚠ Pop-ups Blocked? Allow popups for this site.
 </div>
 
 <div style="font-size:13px;margin-bottom:6px;">
@@ -257,20 +218,15 @@ Open Site on IP Change
 
 </div>
 
-<div id="flashAlert"></div>
-
 <audio id="alarmSound">
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
 
 <script>
 
-Notification.requestPermission();
-
 let lastIP=null;
 let interval=5;
 let muted=false;
-let running=true;
 
 async function getIP(){
 let r=await fetch("https://api.ipify.org");
@@ -279,15 +235,15 @@ return await r.text();
 
 async function loadIntel(ip){
 try{
-let r = await fetch("https://ipwho.is/"+ip);
+let r = await fetch("https://ipapi.co/"+ip+"/json/");
 let d = await r.json();
 
 let html = `
-<div class="intelrow"><span>Country</span><span>${d.country}</span></div>
-<div class="intelrow"><span>City</span><span>${d.city}</span></div>
-<div class="intelrow"><span>ISP</span><span>${d.connection?.isp || "N/A"}</span></div>
-<div class="intelrow"><span>ASN</span><span>${d.connection?.asn || "N/A"}</span></div>
-<div class="intelrow"><span>Timezone</span><span>${d.timezone?.id || "N/A"}</span></div>
+<div class="intelrow"><span>Country</span><span>${d.country_name || "Unknown"}</span></div>
+<div class="intelrow"><span>City</span><span>${d.city || "Unknown"}</span></div>
+<div class="intelrow"><span>ISP</span><span>${d.org || "Unknown"}</span></div>
+<div class="intelrow"><span>ASN</span><span>${d.asn || "Unknown"}</span></div>
+<div class="intelrow"><span>Timezone</span><span>${d.timezone || "Unknown"}</span></div>
 <div class="intelrow"><span>Resolution</span><span>${screen.width}x${screen.height}</span></div>
 `;
 
@@ -298,36 +254,23 @@ document.getElementById("intelBox").innerHTML="Intel load failed";
 }
 }
 
-function flashScreen(){
-let f=document.getElementById("flashAlert");
-f.style.opacity="0.35";
-setTimeout(()=>f.style.opacity="0",400);
-}
-
 async function monitor(){
-
-if(!running) return;
 
 let ip=await getIP();
 
 document.getElementById("ipDisplay").innerHTML=ip;
-loadIntel(ip);
 
 if(!lastIP){
 log("Initial IP detected: "+ip);
+await loadIntel(ip);
 }
 
 if(lastIP && ip!==lastIP){
 
-document.getElementById("statusBar").style.background="#7f1d1d";
 document.getElementById("statusBar").innerHTML="IP CHANGED 🚨";
 log("IP changed to "+ip);
 
-flashScreen();
-
-if(Notification.permission==="granted"){
-new Notification("IP Changed",{body:"New IP: "+ip});
-}
+await loadIntel(ip);
 
 if(!muted){
 document.getElementById("alarmSound").play();
@@ -342,7 +285,6 @@ window.open(u.trim(),"_blank");
 });
 
 }else{
-document.getElementById("statusBar").style.background="#064e3b";
 document.getElementById("statusBar").innerHTML="IP is stable: "+ip;
 }
 
@@ -357,7 +299,9 @@ box.innerHTML+="<br>"+new Date().toLocaleTimeString()+" "+t;
 box.scrollTop=box.scrollHeight;
 }
 
-function forceCheck(){ monitor(); }
+function forceCheck(){
+monitor();
+}
 
 function incInterval(){
 interval++;
@@ -372,16 +316,6 @@ document.getElementById("intervalText").innerHTML=interval+" sec";
 function toggleMute(){
 muted=!muted;
 document.getElementById("muteBtn").innerHTML=muted?"Unmute":"Mute";
-}
-
-function toggleMonitor(){
-running=!running;
-document.getElementById("runBtn").innerHTML=running?"Stop":"Start";
-if(running) monitor();
-}
-
-function clearLogs(){
-document.getElementById("logBox").innerHTML="Logs cleared...";
 }
 
 function copyIP(){

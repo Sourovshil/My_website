@@ -4,31 +4,62 @@
 <title>IP Change Alarm Monitor</title>
 
 <style>
+
 body{
-font-family: Arial;
-background:#111;
-color:#0f0;
+background: linear-gradient(135deg,#050505,#0b1a0b);
+font-family: Consolas, monospace;
+color:#00ff9c;
 text-align:center;
-margin-top:80px;
+margin-top:70px;
+}
+
+h2{
+font-size:40px;
+letter-spacing:2px;
+text-shadow:0 0 15px #00ff9c;
+}
+
+p{
+font-size:18px;
+margin-bottom:20px;
 }
 
 input{
-padding:10px;
-width:350px;
+padding:14px;
+width:420px;
 font-size:16px;
+border:none;
+border-radius:8px;
+outline:none;
+background:#0f0f0f;
+color:#00ff9c;
+box-shadow:0 0 10px #00ff9c55;
 }
 
 button{
-padding:10px 20px;
-font-size:16px;
+margin-top:20px;
+padding:12px 30px;
+font-size:18px;
+border:none;
+border-radius:8px;
 cursor:pointer;
-margin-top:10px;
+background:#00ff9c;
+color:black;
+font-weight:bold;
+transition:0.3s;
+}
+
+button:hover{
+transform:scale(1.05);
+box-shadow:0 0 20px #00ff9c;
 }
 
 #status{
-margin-top:30px;
-font-size:20px;
+margin-top:35px;
+font-size:22px;
+text-shadow:0 0 10px #00ff9c;
 }
+
 </style>
 
 </head>
@@ -46,7 +77,6 @@ font-size:20px;
 
 <div id="status">Status: Idle</div>
 
-<!-- alarm sound -->
 <audio id="alarmSound">
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
@@ -73,10 +103,8 @@ async function checkIP(){
 
         if(lastIP && currentIP !== lastIP){
 
-            // play alarm
             document.getElementById("alarmSound").play();
 
-            // open link
             let url = document.getElementById("targetLink").value;
 
             if(url){
@@ -92,7 +120,7 @@ async function checkIP(){
         "Error checking IP...";
     }
 
-    setTimeout(checkIP, 5000); // 5 second interval
+    setTimeout(checkIP, 5000);
 }
 
 async function startMonitor(){

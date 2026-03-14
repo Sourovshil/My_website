@@ -42,6 +42,13 @@ background:linear-gradient(135deg,#2563eb,#9333ea);
 padding:18px;
 border-radius:14px;
 margin-bottom:15px;
+animation:pulse 3s infinite;
+}
+
+@keyframes pulse{
+0%{box-shadow:0 0 0px rgba(147,51,234,.6);}
+50%{box-shadow:0 0 30px rgba(147,51,234,1);}
+100%{box-shadow:0 0 0px rgba(147,51,234,.6);}
 }
 
 .ipbadge{
@@ -62,6 +69,7 @@ padding:10px;
 border-radius:10px;
 text-align:center;
 margin-bottom:15px;
+transition:.3s;
 }
 
 .controls button{
@@ -83,7 +91,7 @@ padding:12px;
 height:120px;
 overflow:auto;
 font-size:13px;
-opacity:0.8;
+opacity:0.85;
 }
 
 .smallbox{
@@ -136,6 +144,19 @@ text-align:center;
 margin-bottom:10px;
 }
 
+#flashAlert{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:red;
+opacity:0;
+pointer-events:none;
+transition:.4s;
+z-index:9999;
+}
+
 </style>
 
 </head>
@@ -164,6 +185,8 @@ System Idle
 <button onclick="copyIP()">Copy IP</button>
 <button onclick="toggleMute()" id="muteBtn">Mute</button>
 <button onclick="forceCheck()">Force check</button>
+<button onclick="toggleMonitor()" id="runBtn">Stop</button>
+<button onclick="clearLogs()">Clear logs</button>
 </div>
 
 <div class="log" id="logBox">
@@ -218,15 +241,20 @@ Open Site on IP Change
 
 </div>
 
+<div id="flashAlert"></div>
+
 <audio id="alarmSound">
 <source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
 </audio>
 
 <script>
 
+Notification.requestPermission();
+
 let lastIP=null;
 let interval=5;
 let muted=false;
+let running=true;
 
 async function getIP(){
 let r=await fetch("https://api.ipify.org");
@@ -254,7 +282,15 @@ document.getElementById("intelBox").innerHTML="Intel load failed";
 }
 }
 
+function flashScreen(){
+let f=document.getElementById("flashAlert");
+f.style.opacity="0.35";
+setTimeout(()=>f.style.opacity="0",400);
+}
+
 async function monitor(){
+
+if(!running) return;
 
 let ip=await getIP();
 
@@ -267,8 +303,15 @@ log("Initial IP detected: "+ip);
 
 if(lastIP && ip!==lastIP){
 
+document.getElementById("statusBar").style.background="#7f1d1d";
 document.getElementById("statusBar").innerHTML="IP CHANGED 🚨";
 log("IP changed to "+ip);
+
+flashScreen();
+
+if(Notification.permission==="granted"){
+new Notification("IP Changed",{body:"New IP: "+ip});
+}
 
 if(!muted){
 document.getElementById("alarmSound").play();
@@ -283,6 +326,7 @@ window.open(u.trim(),"_blank");
 });
 
 }else{
+document.getElementById("statusBar").style.background="#064e3b";
 document.getElementById("statusBar").innerHTML="IP is stable: "+ip;
 }
 
@@ -314,6 +358,16 @@ document.getElementById("intervalText").innerHTML=interval+" sec";
 function toggleMute(){
 muted=!muted;
 document.getElementById("muteBtn").innerHTML=muted?"Unmute":"Mute";
+}
+
+function toggleMonitor(){
+running=!running;
+document.getElementById("runBtn").innerHTML=running?"Stop":"Start";
+if(running) monitor();
+}
+
+function clearLogs(){
+document.getElementById("logBox").innerHTML="Logs cleared...";
 }
 
 function copyIP(){

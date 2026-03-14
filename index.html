@@ -207,14 +207,10 @@ return await r.text();
 async function loadIntel(){
 try{
 
-let r = await fetch("https://ipcheck.free.nf/intel.php?nocache=" + Date.now(), {
-method: "GET",
-mode: "cors",
-cache: "no-store"
-});
+let url = "https://ipcheck.free.nf/intel.php";
+let proxy = "https://api.allorigins.win/raw?url=";
 
-if(!r.ok) throw new Error("network");
-
+let r = await fetch(proxy + encodeURIComponent(url));
 let d = await r.json();
 
 let vpnColor = d.vpn ? "#ef4444" : "#22c55e";
@@ -233,10 +229,11 @@ let html = `
 document.getElementById("intelBox").innerHTML = html;
 
 }catch(e){
-document.getElementById("intelBox").innerHTML = "Intel connection error";
+document.getElementById("intelBox").innerHTML = "Intel proxy error";
 console.log(e);
 }
 }
+
 
 
 async function monitor(){

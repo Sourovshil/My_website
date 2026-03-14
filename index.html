@@ -90,7 +90,15 @@ opacity:0.8;
 background:#020617;
 border-radius:12px;
 padding:14px;
-margin-bottom:15px;
+margin-top:15px;
+}
+
+.intelrow{
+display:flex;
+justify-content:space-between;
+font-size:13px;
+margin:4px 0;
+opacity:.85;
 }
 
 .intervalBox{
@@ -162,6 +170,10 @@ System Idle
 Waiting for monitoring...
 </div>
 
+<div class="smallbox" id="intelBox">
+Loading IP intelligence...
+</div>
+
 </div>
 
 <div class="panel right">
@@ -215,11 +227,31 @@ Open Site on IP Change
 let lastIP=null;
 let interval=5;
 let muted=false;
-let running=true;
 
 async function getIP(){
 let r=await fetch("https://api.ipify.org");
 return await r.text();
+}
+
+async function loadIntel(ip){
+try{
+let r = await fetch("https://ipapi.co/"+ip+"/json/");
+let d = await r.json();
+
+let html = `
+<div class="intelrow"><span>Country</span><span>${d.country_name}</span></div>
+<div class="intelrow"><span>City</span><span>${d.city}</span></div>
+<div class="intelrow"><span>ISP</span><span>${d.org}</span></div>
+<div class="intelrow"><span>ASN</span><span>${d.asn}</span></div>
+<div class="intelrow"><span>Timezone</span><span>${d.timezone}</span></div>
+<div class="intelrow"><span>Resolution</span><span>${screen.width}x${screen.height}</span></div>
+`;
+
+document.getElementById("intelBox").innerHTML = html;
+
+}catch(e){
+document.getElementById("intelBox").innerHTML="Intel load failed";
+}
 }
 
 async function monitor(){
@@ -227,6 +259,7 @@ async function monitor(){
 let ip=await getIP();
 
 document.getElementById("ipDisplay").innerHTML=ip;
+loadIntel(ip);
 
 if(!lastIP){
 log("Initial IP detected: "+ip);

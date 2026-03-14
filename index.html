@@ -206,7 +206,15 @@ return await r.text();
 
 async function loadIntel(){
 try{
-let r = await fetch("https://ipcheck.free.nf/intel.php");
+
+let r = await fetch("https://ipcheck.free.nf/intel.php?nocache=" + Date.now(), {
+method: "GET",
+mode: "cors",
+cache: "no-store"
+});
+
+if(!r.ok) throw new Error("network");
+
 let d = await r.json();
 
 let vpnColor = d.vpn ? "#ef4444" : "#22c55e";
@@ -215,7 +223,7 @@ let vpnText = d.vpn ? "YES" : "NO";
 let html = `
 <div class="intelrow"><span>Country</span><span>${d.country}</span></div>
 <div class="intelrow"><span>City</span><span>${d.city}</span></div>
-<div class="intelrow"><span>ZIP</span><span>${d.zip}</span></div>
+<div class="intelrow"><span>ZIP</span><span>${d.zip || "N/A"}</span></div>
 <div class="intelrow"><span>Fraud Score</span><span>${d.fraud}</span></div>
 <div class="intelrow"><span>VPN</span><span style="color:${vpnColor}">${vpnText}</span></div>
 <div class="intelrow"><span>Privacy Index</span><span>${d.privacy}/100</span></div>
@@ -225,9 +233,11 @@ let html = `
 document.getElementById("intelBox").innerHTML = html;
 
 }catch(e){
-document.getElementById("intelBox").innerHTML="Intel load failed";
+document.getElementById("intelBox").innerHTML = "Intel connection error";
+console.log(e);
 }
 }
+
 
 async function monitor(){
 

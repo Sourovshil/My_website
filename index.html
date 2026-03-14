@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>IP Change Alarm Monitor</title>
+
+<style>
+body{
+font-family: Arial;
+background:#111;
+color:#0f0;
+text-align:center;
+margin-top:80px;
+}
+
+input{
+padding:10px;
+width:350px;
+font-size:16px;
+}
+
+button{
+padding:10px 20px;
+font-size:16px;
+cursor:pointer;
+margin-top:10px;
+}
+
+#status{
+margin-top:30px;
+font-size:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🌐 IP Change Alarm Monitor</h2>
+
+<p>Enter website link to open when IP changes</p>
+
+<input type="text" id="targetLink" placeholder="https://example.com">
+
+<br>
+<button onclick="startMonitor()">Start Monitoring</button>
+
+<div id="status">Status: Idle</div>
+
+<!-- alarm sound -->
+<audio id="alarmSound">
+<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+</audio>
+
+<script>
+
+let lastIP = null;
+let monitorRunning = false;
+
+async function getIP(){
+    let res = await fetch("https://api.ipify.org");
+    return await res.text();
+}
+
+async function checkIP(){
+
+    if(!monitorRunning) return;
+
+    try{
+        let currentIP = await getIP();
+
+        document.getElementById("status").innerHTML =
+        "Current IP: " + currentIP;
+
+        if(lastIP && currentIP !== lastIP){
+
+            // play alarm
+            document.getElementById("alarmSound").play();
+
+            // open link
+            let url = document.getElementById("targetLink").value;
+
+            if(url){
+                window.open(url, "_blank");
+            }
+
+        }
+
+        lastIP = currentIP;
+
+    }catch(e){
+        document.getElementById("status").innerHTML =
+        "Error checking IP...";
+    }
+
+    setTimeout(checkIP, 5000); // 5 second interval
+}
+
+async function startMonitor(){
+
+    monitorRunning = true;
+
+    lastIP = await getIP();
+
+    document.getElementById("status").innerHTML =
+    "Monitoring started... Current IP: " + lastIP;
+
+    checkIP();
+}
+
+</script>
+
+</body>
+</html>
